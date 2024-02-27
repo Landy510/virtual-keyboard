@@ -38,3 +38,7 @@ input:focus {
 .keyboardAnimation.active {
   transform: translateY(0%);
 }
+
+.hg-button {
+  color: #000;
+}
