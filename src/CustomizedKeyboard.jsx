@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
+import Input from "./components/Input/Input";
 
 // simpleKeyboardMembersClassName 裡的內容是用來判別使用者是否在和
 // 會觸發 virtual keyboard 的 input 欄位 (input 欄位的 className 有 skb-input)，
@@ -11,26 +12,13 @@ const simpleKeyboardMembersClassName = {
 };
 
 const CustomizedKeyboard = ({ setFormVal }) => {
-  const [inputValue, setInputValue] = useState("");
+  const [formData, setFormData] = useState({
+    month: '',
+    year: ''
+  })
   const [isKeyboardShow, setIsKeyboardShow] = useState(false);
   const [keyboardLayoutName, setKeyboardLayoutName] = useState("default");
   const keyboardRef = useRef(null);
-  const handleInputChange = (e) => {
-    setInputValue(e.target.value);
-    keyboardRef.current.setInput(e.target.value);
-    setFormVal((prev) => ({
-      ...prev,
-      name: e.target.value,
-    }));
-  };
-
-  const handleKeyboardChange = (input) => {
-    setInputValue(input);
-    setFormVal((prev) => ({
-      ...prev,
-      name: input,
-    }));
-  };
 
   const handleKeyPress = (button) => {
     if (button === "{lock}") {
@@ -42,11 +30,28 @@ const CustomizedKeyboard = ({ setFormVal }) => {
     }
   };
 
+  const handleInputChangeModule = useMemo(function updateInput() {
+    let _key = '';
+    const publicAPI = {
+      changeKey(_target) {
+        _key = _target;
+      },
+      handleChange(_val) {
+        keyboardRef.current.setInput(_val);
+        setFormData(prev => ({
+          ...prev,
+          [_key]: _val
+        }))
+      }
+    }
+    return publicAPI 
+  }, [setFormData])
+
   useEffect(() => {
     document.addEventListener("click", function documentClick(e) {
       // 利用觸發 click 事件的元素的 class 內容來與 simpleKeyboardMembersClassName 對照，
       // 如果有任何符合的內容，就代表使用者目前在與 virutal keyboard 互動 或者
-      // 典籍了會觸發 virtual keyboard 出現的 input 欄位。
+      // 點擊了會觸發 virtual keyboard 出現的 input 欄位。
       const result = [...e.target.classList].filter(
         (className) => simpleKeyboardMembersClassName[className],
       );
@@ -56,22 +61,49 @@ const CustomizedKeyboard = ({ setFormVal }) => {
 
   return (
     <div>
-      <input
-        type="text"
-        className="mb-1 skb-input"
-        placeholder="please input content via virtual keyboard"
-        inputMode="none"
-        value={inputValue}
-        onFocus={() => setIsKeyboardShow(true)}
-        onChange={(e) => handleInputChange(e)}
-      />
+      <label htmlFor="month">
+        month: 
+        <Input
+          type="text"
+          id='month'
+          inputFieldClassName="mb-1 skb-input"
+          placeholder="please input content via virtual keyboard"
+          inputMode="none"
+          value={formData.month}
+          onFocus={e => {
+            handleInputChangeModule.changeKey('month');
+            keyboardRef.current.setInput(e.target.value);
+            setIsKeyboardShow(true)
+          }}
+          onChange={val => handleInputChangeModule.handleChange(val)}
+        />
+      </label>
+      
+      <label htmlFor="year">
+        year: 
+        <Input
+          type="text"
+          id='year'
+          inputFieldClassName="mb-1 skb-input"
+          placeholder="please input content via virtual keyboard"
+          inputMode="none"
+          value={formData.year}
+          onFocus={e => {
+            handleInputChangeModule.changeKey('year');
+            keyboardRef.current.setInput(e.target.value);
+            setIsKeyboardShow(true)
+          }}
+          onChange={val => handleInputChangeModule.handleChange(val)}
+        />
+      </label>
+
       <input />
 
       <div className={`keyboardAnimation ${isKeyboardShow ? "active" : ""}`}>
         <Keyboard
           baseClass="customizedKeyboard"
           keyboardRef={(ref) => (keyboardRef.current = ref)}
-          onChange={handleKeyboardChange}
+          onChange={val => handleInputChangeModule.handleChange(val)}
           layoutName={keyboardLayoutName}
           onKeyPress={handleKeyPress}
           display={{
