@@ -3,13 +3,15 @@ import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
 import Input from "./components/Input/Input";
 
-// simpleKeyboardMembersClassName 裡的內容是用來判別使用者是否在和
-// 會觸發 virtual keyboard 的 input 欄位 (input 欄位的 className 有 skb-input)，
-// 或者是否使用者正在打擊 virtual keyboard 的按鍵 (className 含有 hg-button 元素)。
-const simpleKeyboardMembersClassName = {
-  "skb-input": "skb-input",
-  "hg-button": "hg-button",
-};
+const isOneOfKeyBoardClassName = function check(className) {
+  // 判斷被點擊的元素是否為虛擬鍵盤內的元素 或著 需要虛擬鍵盤輸入內容的元素
+  const simpleKeyboardMembersClassName = {
+    "skb-input": "skb-input", // 需要虛擬鍵盤輸入內容的元素 className
+    "hg-button": "hg-button" // 虛擬鍵盤上的按鈕 className
+  };
+
+  return simpleKeyboardMembersClassName[className]
+}
 
 const CustomizedKeyboard = ({ setFormVal }) => {
   const [formData, setFormData] = useState({
@@ -49,11 +51,10 @@ const CustomizedKeyboard = ({ setFormVal }) => {
 
   useEffect(() => {
     document.addEventListener("click", function documentClick(e) {
-      // 利用觸發 click 事件的元素的 class 內容來與 simpleKeyboardMembersClassName 對照，
-      // 如果有任何符合的內容，就代表使用者目前在與 virutal keyboard 互動 或者
-      // 點擊了會觸發 virtual keyboard 出現的 input 欄位。
+      // 若觸發的元素的 className 不包含在 isOneOfKeyBoardClassName 裡的 simpleKeyboardMembersClassName 任一個 className，
+      // 就代表使用者是點擊虛擬鍵盤以外的地方，則將虛擬鍵盤收闔起來。
       const result = [...e.target.classList].filter(
-        (className) => simpleKeyboardMembersClassName[className],
+        (className) => isOneOfKeyBoardClassName(className),
       );
       !result.length && setIsKeyboardShow(false);
     });
