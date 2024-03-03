@@ -4,10 +4,9 @@ import "react-simple-keyboard/build/css/index.css";
 import Input from "./components/Input/Input";
 
 const isOneOfKeyBoardClassName = function check(className) {
-  // 判斷被點擊的元素是否為虛擬鍵盤內的元素 或著 需要虛擬鍵盤輸入內容的元素
+  // 判斷被點擊的元素是否為虛擬鍵盤內的元素
   const simpleKeyboardMembersClassName = {
     "skb-input": "skb-input", // 需要虛擬鍵盤輸入內容的元素 className
-    "hg-button": "hg-button" // 虛擬鍵盤上的按鈕 className
   };
 
   return simpleKeyboardMembersClassName[className]
@@ -50,14 +49,21 @@ const CustomizedKeyboard = ({ setFormVal }) => {
   }, [setFormData])
 
   useEffect(() => {
-    document.addEventListener("click", function documentClick(e) {
-      // 若觸發的元素的 className 不包含在 isOneOfKeyBoardClassName 裡的 simpleKeyboardMembersClassName 任一個 className，
-      // 就代表使用者是點擊虛擬鍵盤以外的地方，則將虛擬鍵盤收闔起來。
-      const result = [...e.target.classList].filter(
-        (className) => isOneOfKeyBoardClassName(className),
-      );
-      !result.length && setIsKeyboardShow(false);
-    });
+    document.addEventListener("click", documentClickEvt);
+
+    function documentClickEvt(e) {      
+      const virtualKeyBoardRowsAreaRef = keyboardRef.current.keyboardRowsDOM;
+      const isTriggeredInKeyBoardRowsArea = virtualKeyBoardRowsAreaRef.contains(e.target)
+      const isTriggeredBySecuredInputField = [...e.target.classList].filter(
+            (className) => isOneOfKeyBoardClassName(className),
+          ).length !== 0
+      if(!isTriggeredInKeyBoardRowsArea && !isTriggeredBySecuredInputField){
+        setIsKeyboardShow(false);
+        setKeyboardLayoutName("default");
+      }
+    }    
+
+    return () => document.removeEventListener("click", documentClickEvt);
   }, []);
 
   return (
@@ -103,7 +109,10 @@ const CustomizedKeyboard = ({ setFormVal }) => {
       <div className={`keyboardAnimation ${isKeyboardShow ? "active" : ""}`}>
         <Keyboard
           baseClass="customizedKeyboard"
-          keyboardRef={(ref) => (keyboardRef.current = ref)}
+          keyboardRef={(ref) => {
+            keyboardRef.current = ref;
+            
+          }}
           onChange={val => handleInputChangeModule.handleChange(val)}
           layoutName={keyboardLayoutName}
           onKeyPress={handleKeyPress}
